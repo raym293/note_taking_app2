@@ -22,8 +22,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add a new note
     addNoteForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+        console.log("Form submitted"); // Debugging log
+
         const title = document.getElementById("note-title").value;
         const content = document.getElementById("note-content").value;
+
+        console.log("Title:", title); // Debugging log
+        console.log("Content:", content); // Debugging log
 
         await fetch("/notes", {
             method: "POST",
@@ -33,19 +38,22 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({ id: Date.now(), title, content }),
         });
 
+        console.log("POST request sent"); // Debugging log
+
         fetchNotes();
         addNoteForm.reset();
     });
 
-    // Delete a note
+    // Expose deleteNote to the global scope
     async function deleteNote(noteId) {
         await fetch(`/notes/${noteId}`, {
             method: "DELETE",
         });
         fetchNotes();
     }
+    window.deleteNote = deleteNote;
 
-    // Edit a note
+    // Expose editNote to the global scope
     async function editNote(noteId, currentTitle, currentContent) {
         const newTitle = prompt("Edit Title:", currentTitle);
         const newContent = prompt("Edit Content:", currentContent);
@@ -61,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
             fetchNotes();
         }
     }
+    window.editNote = editNote;
 
     // Initial fetch
     fetchNotes();

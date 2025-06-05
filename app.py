@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -14,14 +13,20 @@ USER = os.getenv('USER')
 DATABASE = os.getenv('DATABASE')
 HOST = os.getenv('HOST')
 
-# Initialize Redis
+# Redis
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-# Initialize FastAPI
+# FastAPI
 app = FastAPI()
 
-# Serve static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+# Serve static files with no caching
+app.mount("/static", NoCacheStaticFiles(directory="static"), name="static")
 
 # Database connection function
 def get_connection():
@@ -48,6 +53,7 @@ async def view_notes():
     """Fetch all notes."""
     cached_notes = redis_client.get("notes")
     if cached_notes:
+        print(eval(cached_notes))
         return {"notes": eval(cached_notes)}
 
     conn = get_connection()
@@ -58,7 +64,7 @@ async def view_notes():
     curr.execute("SELECT * FROM notetaker;")
     notes = curr.fetchall()
     conn.close()
-
+    print("Here is notes:\n",notes)
     redis_client.set("notes", str(notes))
     return {"notes": notes}
 
@@ -71,8 +77,8 @@ async def create_note(note: Note):
 
     curr = conn.cursor()
     curr.execute(
-        "INSERT INTO notetaker (id, title, content) VALUES (%s, %s, %s);",
-        (note.id, note.title, note.content),
+        "INSERT INTO notetaker (title, content) VALUES (%s, %s);",
+        (note.title, note.content),
     )
     conn.commit()
     conn.close()
