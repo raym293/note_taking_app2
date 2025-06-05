@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
@@ -16,9 +17,15 @@ HOST = os.getenv('HOST')
 # Redis
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
+
 # FastAPI
 app = FastAPI()
 
+#icon
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse(os.path.join(os.path.dirname(__file__), 'icon.ico'))
+ 
 class NoCacheStaticFiles(StaticFiles):
     async def get_response(self, path, scope):
         response = await super().get_response(path, scope)
@@ -50,7 +57,6 @@ class Note(BaseModel):
 
 @app.get("/notes")
 async def view_notes():
-    """Fetch all notes."""
     cached_notes = redis_client.get("notes")
     if cached_notes:
         print(eval(cached_notes))
@@ -70,7 +76,6 @@ async def view_notes():
 
 @app.post("/notes")
 async def create_note(note: Note):
-    """Create a new note."""
     conn = get_connection()
     if not conn:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -82,13 +87,11 @@ async def create_note(note: Note):
     )
     conn.commit()
     conn.close()
-
-    redis_client.delete("notes")  # Invalidate cache
+    redis_client.delete("notes")  # clear cache
     return {"message": "Note created successfully"}
 
 @app.delete("/notes/{note_id}")
 async def delete_note(note_id: int):
-    """Delete a note by ID."""
     conn = get_connection()
     if not conn:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -97,8 +100,7 @@ async def delete_note(note_id: int):
     curr.execute("DELETE FROM notetaker WHERE id = %s;", (note_id,))
     conn.commit()
     conn.close()
-
-    redis_client.delete("notes")  # Invalidate cache
+    redis_client.delete("notes")  # clear cache
     return {"message": "Note deleted successfully"}
 
 @app.put("/notes/{note_id}")
@@ -115,6 +117,5 @@ async def update_note(note_id: int, note: Note):
     )
     conn.commit()
     conn.close()
-
-    redis_client.delete("notes")  # Invalidate cache
+    redis_client.delete("notes")  # clear cache
     return {"message": "Note updated successfully"}
