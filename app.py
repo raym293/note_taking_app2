@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
@@ -54,6 +54,10 @@ class Note(BaseModel):
     id: int
     title: str
     content: str
+
+@app.get('/')
+async def root():
+    return RedirectResponse(url="http://127.0.0.1:8000/static/index.html")
 
 @app.get("/notes")
 async def view_notes():
