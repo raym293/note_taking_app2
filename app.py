@@ -1,3 +1,4 @@
+from fastapi_mcp import FastApiMCP
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
@@ -18,8 +19,13 @@ HOST = os.getenv('HOST')
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 
-# FastAPI
+# FastAPI and mcp mounting
 app = FastAPI()
+mcp = FastApiMCP(
+    app,
+    include_operations=["view_all_notes","create_note","delete_note_given_id","update_note_title_or_content"]
+)
+mcp.mount()
 
 #icon
 @app.get('/favicon.ico', include_in_schema=False)
@@ -59,7 +65,7 @@ class Note(BaseModel):
 async def root():
     return RedirectResponse(url="http://127.0.0.1:8000/static/index.html")
 
-@app.get("/notes")
+@app.get("/notes", operation_id="view_all_notes")
 async def view_notes():
     cached_notes = redis_client.get("notes")
     if cached_notes:
@@ -78,7 +84,7 @@ async def view_notes():
     redis_client.set("notes", str(notes))
     return {"notes": notes}
 
-@app.post("/notes")
+@app.post("/notes", operation_id="create_note")
 async def create_note(note: Note):
     conn = get_connection()
     if not conn:
@@ -94,7 +100,7 @@ async def create_note(note: Note):
     redis_client.delete("notes")  # clear cache
     return {"message": "Note created successfully"}
 
-@app.delete("/notes/{note_id}")
+@app.delete("/notes/{note_id}", operation_id="delete_note_given_id")
 async def delete_note(note_id: int):
     conn = get_connection()
     if not conn:
@@ -107,7 +113,7 @@ async def delete_note(note_id: int):
     redis_client.delete("notes")  # clear cache
     return {"message": "Note deleted successfully"}
 
-@app.put("/notes/{note_id}")
+@app.put("/notes/{note_id}", operation_id="update_note_title_or_content")
 async def update_note(note_id: int, note: Note):
     """Update a note by ID."""
     conn = get_connection()
