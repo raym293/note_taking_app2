@@ -8,6 +8,7 @@ import os
 import psycopg2
 import redis
 import logging
+import uvicorn
 
 # Load environment variables
 load_dotenv()
@@ -24,12 +25,6 @@ logging.basicConfig(level=logging.DEBUG)  # Enable debug logging
 
 # FastAPI and mcp mounting
 app = FastAPI()
-mcp = FastApiMCP(
-    app,
-    name="My Notetaking app's server",
-    description="This is an endpoint for mcp server",
-    include_operations=["view_all_notes", "create_note", "delete_note_given_id", "update_note_title_or_content"]
-)
 
 #icon
 @app.get('/favicon.ico', include_in_schema=False)
@@ -135,5 +130,14 @@ async def update_note(note_id: int, note: Note):
     redis_client.delete("notes")  # clear cache
     return {"message": "Note updated successfully"}
 
-app.openapi()
+# Mount MCP server after all routes are declared
+mcp = FastApiMCP(
+    app,
+    name="My Notetaking app's server",
+    description="This is an endpoint for mcp server",
+    include_operations=["view_all_notes", "create_note", "delete_note_given_id", "update_note_title_or_content"]
+)
 mcp.mount()
+
+if __name__ == '__main__':
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
