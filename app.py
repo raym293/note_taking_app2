@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 import redis
-import logging
 import uvicorn
 
 # Load environment variables
@@ -17,11 +16,10 @@ USER = os.getenv('USER')
 DATABASE = os.getenv('DATABASE')
 HOST = os.getenv('HOST')
 
+
 # Redis
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-# Logging
-logging.basicConfig(level=logging.DEBUG)  # Enable debug logging
 
 # FastAPI and mcp mounting
 app = FastAPI()

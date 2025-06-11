@@ -6,14 +6,16 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-framework-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-blue)
 ![Redis](https://img.shields.io/badge/Redis-cache-red)
+![MCP](https://img.shields.io/badge/MCP-enabled-purple)
 
 ## Description
-This is a simple note-taking application built with FastAPI for the backend, PostgreSQL for persistent storage, and Redis for caching. The frontend is implemented using HTML, CSS, and JavaScript.
+This is a simple note-taking application built with FastAPI for the backend, PostgreSQL for persistent storage, and Redis for caching. The frontend is implemented using HTML, CSS, and JavaScript. The backend also supports Model Context Protocol (MCP) for LLM and tool integration.
 
 ## Features
 - View, add, edit, and delete notes.
 - Persistent storage using PostgreSQL.
 - Caching with Redis for faster data retrieval.
+- MCP server for LLM and tool integration (via fastapi_mcp).
 
 ## Prerequisites
 Make sure you have the following installed on your system:
@@ -75,11 +77,17 @@ Make sure you have the following installed on your system:
    http://127.0.0.1:8000/docs
    ```
 
+4. (Optional) Use MCP tools:
+   - Ensure you have the [VS Code MCP extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mcp) installed.
+   - The MCP server will be available at `http://127.0.0.1:8000/mcp`.
+   - You can interact with your app using LLMs and tool calls.
+
 ## Project Structure
-- `app.py`: Backend logic for FastAPI.
+- `app.py`: Backend logic for FastAPI and MCP integration.
 - `static/`: Contains frontend files (`index.html`, `styles.css`, `script.js`, `icon.png`).
 - `README.md`: Project documentation.
 - `.env`: Environment variables for database configuration.
+- `requirements.txt`: Python dependencies.
 
 ## License
 This project is licensed under the MIT License.
