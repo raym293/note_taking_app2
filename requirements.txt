@@ -3,3 +3,5 @@ uvicorn
 psycopg2
 python-dotenv
 redis
+fastapi_mcp
+logging
