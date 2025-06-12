@@ -1,5 +1,5 @@
 from fastapi_mcp import FastApiMCP
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
@@ -8,6 +8,8 @@ import os
 import psycopg2
 import redis
 import uvicorn
+from transcribe import transcribe_first_audio
+# import shutil
 
 # Load environment variables
 load_dotenv()
@@ -128,12 +130,35 @@ async def update_note(note_id: int, note: Note):
     redis_client.delete("notes")  # clear cache
     return {"message": "Note updated successfully"}
 
+@app.post("/transcribe", operation_id="transcribe", tags=["MCP"])
+def transcribe_endpoint():
+    """
+    Transcribe all audio files in the /audio directory, creating a note for each. For each transcription, summarize the transcribed text and update the note's title to be more appropriate based on the content. This endpoint will continue processing until no audio files remain.
+    """
+    result = transcribe_first_audio()
+    if result:
+        conn = get_connection()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+
+        curr = conn.cursor()
+        curr.execute(
+            "INSERT INTO notetaker (title, content) VALUES (%s, %s);",
+            ("Meeting Note", result),
+        )
+        conn.commit()
+        conn.close()
+        redis_client.delete("notes")  # clear cache
+        return {"message": "Note created successfully"}
+    else:
+        return {"error": "No audio files found in the audio directory."}
+
 # Mount MCP server after all routes are declared
 mcp = FastApiMCP(
     app,
     name="My Notetaking app's server",
     description="This is an endpoint for mcp server",
-    include_operations=["view_all_notes", "create_note", "delete_note_given_id", "update_note_title_or_content"]
+    include_operations=["view_all_notes", "create_note", "delete_note_given_id", "update_note_title_or_content","transcribe"]
 )
 mcp.mount()
 
